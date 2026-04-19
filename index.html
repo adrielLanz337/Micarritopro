@@ -10,33 +10,28 @@
         body { 
             font-family: sans-serif; 
             background-color: #121212; 
+            /* Configuración optimizada para imágenes y GIFs */
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed;
+            background-repeat: no-repeat;
             color: #e0e0e0; 
-            margin: 0; 
-            padding: 0; 
-            transition: background 0.3s;
+            margin: 0; padding: 0; 
+            transition: background 0.5s ease-in-out;
         }
-        /* Capa para legibilidad sobre el fondo */
         .overlay { background: var(--bg-overlay); min-height: 100vh; width: 100%; }
-        
         .nav { display: flex; background: #1e1e1e; border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
         .nav button { flex: 1; padding: 15px; background: none; border: none; color: white; font-weight: bold; cursor: pointer; }
         .nav button.active { border-bottom: 4px solid var(--accent); color: var(--accent); }
-        
         .container { padding: 15px; padding-bottom: 100px; }
         input, select { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 5px; font-size: 16px; width: 100%; box-sizing: border-box; }
-        
         .card { background: #1e1e1e; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid var(--accent); }
         .item-lista { background: #252525; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #333; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-        
         .btn-add { background: var(--accent); color: black; border: none; padding: 15px; width: 100%; font-weight: bold; border-radius: 8px; margin-top: 10px; cursor: pointer; }
         .viva-bs { color: var(--accent); font-weight: bold; font-size: 1.2em; }
         .oculto { display: none; }
         .delete { color: #ff5252; background: none; border: none; font-weight: bold; cursor: pointer; }
-        
         .config-box { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #555; }
         .btn-blue { background: #2196F3; color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
@@ -82,15 +77,19 @@
     <div id="seccion-config" class="container oculto">
         <h3>Configuración</h3>
         <div class="config-box">
-            <label>Imagen de Fondo (URL):</label>
-            <input type="text" id="bg-url-input" placeholder="Pega el link de la imagen aquí..." style="margin-top:8px;">
-            <button class="btn-blue" onclick="cambiarFondo()" style="background:var(--accent); color:black;">Aplicar Fondo</button>
-            <button class="delete" onclick="borrarFondo()" style="width:100%; margin-top:8px;">Quitar Fondo</button>
+            <label><strong>Fondo por URL (Imagen o GIF):</strong></label>
+            <input type="text" id="bg-url-input" placeholder="Pega el link .gif o .jpg aquí..." style="margin-top:8px;">
+            <button class="btn-blue" onclick="aplicarFondoURL()" style="background:var(--accent); color:black;">Aplicar Fondo URL</button>
+        </div>
+        <div class="config-box">
+            <label><strong>Fondo desde Galería:</strong></label>
+            <input type="file" id="bg-file-input" accept="image/*" onchange="procesarFotoFondo(event)" style="margin-top:8px;">
+            <button class="delete" onclick="borrarFondo()" style="width:100%; margin-top:15px;">Quitar Fondo Actual</button>
         </div>
         <div class="config-box">
             <label>Copia de Seguridad:</label>
             <button class="btn-blue" onclick="exportarDatos()">Descargar Respaldo (.json)</button>
-            <p style="font-size:12px; color:#aaa; margin-top:15px;">Para restaurar datos antiguos:</p>
+            <p style="font-size:12px; color:#aaa; margin-top:15px;">Importar respaldo:</p>
             <input type="file" id="import-file" accept=".json" onchange="importarDatos(event)">
         </div>
     </div>
@@ -104,9 +103,33 @@
 
     function save() { localStorage.setItem('app_data', JSON.stringify(db)); actualizarDatalist(); }
 
-    function aplicarFondo() {
-        document.body.style.backgroundImage = db.bg ? `url('${db.bg}')` : "none";
+    function aplicarEstilosFondo() {
+        if(db.bg) {
+            document.body.style.backgroundImage = `url('${db.bg}')`;
+        } else {
+            document.body.style.backgroundImage = "none";
+        }
     }
+
+    function aplicarFondoURL() {
+        const url = document.getElementById('bg-url-input').value;
+        if(url.trim()) {
+            db.bg = url;
+            save();
+            aplicarEstilosFondo();
+            alert("¡GIF/Imagen aplicado correctamente!");
+        }
+    }
+
+    function procesarFotoFondo(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { db.bg = e.target.result; save(); aplicarEstilosFondo(); alert("Foto de galería aplicada"); };
+        reader.readAsDataURL(file);
+    }
+
+    function borrarFondo() { db.bg = ""; save(); aplicarEstilosFondo(); alert("Fondo eliminado"); }
 
     function showTab(tab) {
         document.getElementById('seccion-listas').classList.toggle('oculto', tab !== 'listas');
@@ -114,41 +137,14 @@
         document.getElementById('seccion-config').classList.toggle('oculto', tab !== 'config');
         document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-tab-' + tab).classList.add('active');
-        if(tab === 'catalogo') renderCatalogo();
-        if(tab === 'listas') renderMenuListas();
-        if(tab === 'config') document.getElementById('bg-url-input').value = db.bg || "";
+        if(tab === 'config') document.getElementById('bg-url-input').value = (db.bg && db.bg.startsWith('http')) ? db.bg : "";
     }
 
-    function cambiarFondo() {
-        db.bg = document.getElementById('bg-url-input').value;
-        save(); aplicarFondo(); alert("Fondo guardado");
-    }
-
-    function borrarFondo() { db.bg = ""; save(); aplicarFondo(); document.getElementById('bg-url-input').value = ""; }
-
-    function exportarDatos() {
-        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = "respaldo_carrito.json";
-        a.click();
-    }
-
-    function importarDatos(e) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            db = JSON.parse(event.target.result);
-            save(); aplicarFondo(); renderMenuListas(); alert("Datos Restaurados");
-        };
-        reader.readAsText(e.target.files[0]);
-    }
-
-    // Lógica de funcionamiento (Igual a la anterior pero optimizada)
+    // --- RESTO DE FUNCIONES IGUALES ---
     function agregarAlCatalogo() {
         const inp = document.getElementById('nuevo-prod-nombre');
         if(inp.value.trim()) { db.catalogo.push(inp.value.trim()); inp.value=''; save(); renderCatalogo(); }
     }
-
     function renderCatalogo() {
         const cont = document.getElementById('lista-catalogo');
         cont.innerHTML = '';
@@ -156,24 +152,13 @@
             cont.innerHTML += `<div class="cat-item"><span>${p}</span><button class="delete" onclick="db.catalogo.splice(${i},1); save(); renderCatalogo();">X</button></div>`;
         });
     }
-
-    function actualizarDatalist() {
-        document.getElementById('datalist-prods').innerHTML = db.catalogo.map(p => `<option value="${p}">`).join('');
-    }
-
-    function nuevaLista() {
-        db.listas.push({ titulo: "Compra Nueva", fecha: new Date().toISOString().split('T')[0], tasa: 45, items: [] });
-        abrirLista(db.listas.length - 1);
-    }
-
+    function actualizarDatalist() { document.getElementById('datalist-prods').innerHTML = db.catalogo.map(p => `<option value="${p}">`).join(''); }
+    function nuevaLista() { db.listas.push({ titulo: "Compra Nueva", fecha: new Date().toISOString().split('T')[0], tasa: 45, items: [] }); abrirLista(db.listas.length - 1); }
     function renderMenuListas() {
         const cont = document.getElementById('contenedor-todas-listas');
         cont.innerHTML = '';
-        db.listas.forEach((l, i) => {
-            cont.innerHTML += `<div class="card" onclick="abrirLista(${i})"><strong>${l.titulo}</strong><br><small>${l.fecha}</small></div>`;
-        });
+        db.listas.forEach((l, i) => { cont.innerHTML += `<div class="card" onclick="abrirLista(${i})"><strong>${l.titulo}</strong><br><small>${l.fecha}</small></div>`; });
     }
-
     function abrirLista(i) {
         idActual = i; const l = db.listas[i];
         document.getElementById('edit-titulo').value = l.titulo;
@@ -183,62 +168,52 @@
         document.getElementById('vista-detalle-lista').classList.remove('oculto');
         renderFilas();
     }
-
     function agregarFilaVacia() { db.listas[idActual].items.push({n:'', p:0, c:1, tipo: 'und'}); renderFilas(); }
-
     function renderFilas() {
         const cont = document.getElementById('filas-articulos');
         cont.innerHTML = '';
         db.listas[idActual].items.forEach((it, idx) => {
-            cont.innerHTML += `
-                <div class="item-lista">
-                    <div style="display:flex; gap:5px; margin-bottom:5px;">
-                        <input type="text" value="${it.n}" list="datalist-prods" oninput="actualizarItem(${idx}, 'n', this.value)" placeholder="Producto" style="flex:2">
-                        <select onchange="actualizarItem(${idx}, 'tipo', this.value)" style="flex:1">
-                            <option value="und" ${it.tipo === 'und' ? 'selected' : ''}>Und</option>
-                            <option value="kg" ${it.tipo === 'kg' ? 'selected' : ''}>Kg</option>
-                        </select>
-                        <button class="delete" onclick="db.listas[idActual].items.splice(${idx},1); guardarActual(); renderFilas();">×</button>
-                    </div>
-                    <div class="grid">
-                        <input type="number" value="${it.p}" oninput="actualizarItem(${idx}, 'p', this.value)" placeholder="Precio">
-                        <input type="number" value="${it.c}" oninput="actualizarItem(${idx}, 'c', this.value)" placeholder="Cant" step="0.001">
-                    </div>
-                </div>`;
+            cont.innerHTML += `<div class="item-lista">
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <input type="text" value="${it.n}" list="datalist-prods" oninput="actualizarItem(${idx}, 'n', this.value)" placeholder="Producto" style="flex:2">
+                    <select onchange="actualizarItem(${idx}, 'tipo', this.value)" style="flex:1">
+                        <option value="und" ${it.tipo === 'und' ? 'selected' : ''}>Und</option>
+                        <option value="kg" ${it.tipo === 'kg' ? 'selected' : ''}>Kg</option>
+                    </select>
+                    <button class="delete" onclick="db.listas[idActual].items.splice(${idx},1); guardarActual(); renderFilas();">×</button>
+                </div>
+                <div class="grid"><input type="number" value="${it.p}" oninput="actualizarItem(${idx}, 'p', this.value)" placeholder="Precio"><input type="number" value="${it.c}" oninput="actualizarItem(${idx}, 'c', this.value)" placeholder="Cant" step="0.001"></div>
+            </div>`;
         });
         calcTotal();
     }
-
-    function actualizarItem(idx, campo, valor) {
-        db.listas[idActual].items[idx][campo] = (campo === 'n' || campo === 'tipo') ? valor : parseFloat(valor);
-        guardarActual(); calcTotal();
-    }
-
+    function actualizarItem(idx, campo, valor) { db.listas[idActual].items[idx][campo] = (campo === 'n' || campo === 'tipo') ? valor : parseFloat(valor); guardarActual(); calcTotal(); }
     function guardarActual() {
         db.listas[idActual].titulo = document.getElementById('edit-titulo').value;
         db.listas[idActual].fecha = document.getElementById('edit-fecha').value;
         db.listas[idActual].tasa = parseFloat(document.getElementById('edit-tasa').value) || 0;
         save();
     }
-
     function calcTotal() {
         let tUSD = 0;
         db.listas[idActual].items.forEach(it => tUSD += (it.p * it.c));
         document.getElementById('resUSD').innerText = tUSD.toFixed(2);
         document.getElementById('resBS').innerText = (tUSD * db.listas[idActual].tasa).toLocaleString('es-VE');
     }
-
-    function irAMenuListas() {
-        document.getElementById('vista-menu-listas').classList.remove('oculto');
-        document.getElementById('vista-detalle-lista').classList.add('oculto');
-        renderMenuListas();
+    function irAMenuListas() { document.getElementById('vista-menu-listas').classList.remove('oculto'); document.getElementById('vista-detalle-lista').classList.add('oculto'); renderMenuListas(); }
+    function eliminarListaActual() { if(confirm('¿Eliminar lista?')) { db.listas.splice(idActual, 1); save(); irAMenuListas(); } }
+    function exportarDatos() {
+        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "respaldo_carrito.json"; a.click();
+    }
+    function importarDatos(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => { db = JSON.parse(event.target.result); save(); aplicarEstilosFondo(); renderMenuListas(); alert("Datos Restaurados"); };
+        reader.readAsText(e.target.files[0]);
     }
 
-    function eliminarListaActual() {
-        if(confirm('¿Eliminar lista?')) { db.listas.splice(idActual, 1); save(); irAMenuListas(); }
-    }
-
-    aplicarFondo();
+    aplicarEstilosFondo();
     actualizarDatalist();
     renderMenuListas();
 </script>
