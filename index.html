@@ -6,131 +6,176 @@
     <title>Mi Carrito Pro</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 0; }
-        .nav { display: flex; background: #1e1e1e; border-bottom: 2px solid #00c853; position: sticky; top: 0; z-index: 100; }
-        .nav button { flex: 1; padding: 15px; background: none; border: none; color: white; font-weight: bold; cursor: pointer; }
-        .nav button.active { border-bottom: 4px solid #00c853; color: #00c853; }
+        :root { --accent: #00c853; --bg-overlay: rgba(18, 18, 18, 0.88); }
+        body { 
+            font-family: sans-serif; 
+            background-color: #121212; 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
+            color: #e0e0e0; 
+            margin: 0; 
+            padding: 0; 
+            transition: background 0.3s;
+        }
+        /* Capa para legibilidad sobre el fondo */
+        .overlay { background: var(--bg-overlay); min-height: 100vh; width: 100%; }
         
-        .container { padding: 15px; margin-bottom: 80px; }
+        .nav { display: flex; background: #1e1e1e; border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
+        .nav button { flex: 1; padding: 15px; background: none; border: none; color: white; font-weight: bold; cursor: pointer; }
+        .nav button.active { border-bottom: 4px solid var(--accent); color: var(--accent); }
+        
+        .container { padding: 15px; padding-bottom: 100px; }
         input, select { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 5px; font-size: 16px; width: 100%; box-sizing: border-box; }
         
-        .cat-item { display: flex; justify-content: space-between; background: #1e1e1e; padding: 10px; margin-bottom: 5px; border-radius: 5px; align-items: center; }
-        
-        .card { background: #1e1e1e; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid #00c853; }
-        .header-lista { background: #121212; padding: 10px 0; }
+        .card { background: #1e1e1e; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid var(--accent); }
         .item-lista { background: #252525; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #333; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
         
-        .btn-add { background: #00c853; color: black; border: none; padding: 15px; width: 100%; font-weight: bold; border-radius: 8px; margin-top: 10px; }
-        .viva-bs { color: #00c853; font-weight: bold; font-size: 1.2em; }
+        .btn-add { background: var(--accent); color: black; border: none; padding: 15px; width: 100%; font-weight: bold; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+        .viva-bs { color: var(--accent); font-weight: bold; font-size: 1.2em; }
         .oculto { display: none; }
-        .delete { color: #ff5252; background: none; border: none; font-weight: bold; }
-        .tipo-badge { font-size: 10px; background: #444; padding: 2px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
+        .delete { color: #ff5252; background: none; border: none; font-weight: bold; cursor: pointer; }
+        
+        .config-box { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #555; }
+        .btn-blue { background: #2196F3; color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div class="nav">
-    <button id="btn-tab-listas" class="active" onclick="showTab('listas')">LISTAS</button>
-    <button id="btn-tab-catalogo" onclick="showTab('catalogo')">CATÁLOGO</button>
-</div>
-
-<div id="seccion-catalogo" class="container oculto">
-    <h3>Gestionar Productos</h3>
-    <div style="display: flex; gap: 5px;">
-        <input type="text" id="nuevo-prod-nombre" placeholder="Nombre (Ej: Tomate)">
-        <button onclick="agregarAlCatalogo()" style="background:#00c853; border:none; padding:10px 15px; border-radius:5px; font-weight:bold;">+</button>
-    </div>
-    <div id="lista-catalogo" style="margin-top:20px;"></div>
-</div>
-
-<div id="seccion-listas" class="container">
-    <div id="vista-menu-listas">
-        <button class="btn-add" onclick="nuevaLista()">+ NUEVA LISTA</button>
-        <div id="contenedor-todas-listas"></div>
+<div class="overlay">
+    <div class="nav">
+        <button id="btn-tab-listas" class="active" onclick="showTab('listas')">LISTAS</button>
+        <button id="btn-tab-catalogo" onclick="showTab('catalogo')">CATÁLOGO</button>
+        <button id="btn-tab-config" onclick="showTab('config')">⚙️</button>
     </div>
 
-    <div id="vista-detalle-lista" class="oculto">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <button onclick="irAMenuListas()" style="color:#00c853; background:none; border:none; padding:10px 0; font-weight:bold;">← VOLVER</button>
-            <button class="delete" onclick="eliminarListaActual()">Eliminar Lista</button>
+    <div id="seccion-listas" class="container">
+        <div id="vista-menu-listas">
+            <button class="btn-add" onclick="nuevaLista()">+ NUEVA LISTA</button>
+            <div id="contenedor-todas-listas"></div>
         </div>
-        <div class="header-lista">
-            <input type="text" id="edit-titulo" oninput="guardarActual()">
-            <input type="date" id="edit-fecha" oninput="guardarActual()" style="margin: 5px 0;">
-            <div style="background:#1e1e1e; padding:10px; border-radius:5px; margin-top:5px;">
-                Tasa Bs/$: <input type="number" id="edit-tasa" style="width:100px" oninput="guardarActual()">
+        <div id="vista-detalle-lista" class="oculto">
+            <div style="display:flex; justify-content: space-between;">
+                <button onclick="irAMenuListas()" style="color:var(--accent); background:none; border:none; font-weight:bold;">← VOLVER</button>
+                <button class="delete" onclick="eliminarListaActual()">Eliminar Lista</button>
+            </div>
+            <div class="card">
+                <input type="text" id="edit-titulo" oninput="guardarActual()" placeholder="Título">
+                <input type="date" id="edit-fecha" oninput="guardarActual()" style="margin: 5px 0;">
+                Tasa: <input type="number" id="edit-tasa" style="width:90px" oninput="guardarActual()">
                 <div style="margin-top:10px">Total: <span id="resUSD">0</span>$ | <span id="resBS" class="viva-bs">0</span> Bs</div>
             </div>
+            <div id="filas-articulos"></div>
+            <button class="btn-add" onclick="agregarFilaVacia()">+ AGREGAR ARTÍCULO</button>
         </div>
-        <div id="filas-articulos"></div>
-        <button class="btn-add" onclick="agregarFilaVacia()">+ AGREGAR ARTÍCULO</button>
+    </div>
+
+    <div id="seccion-catalogo" class="container oculto">
+        <h3>Mi Catálogo</h3>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="nuevo-prod-nombre" placeholder="Nombre del producto">
+            <button onclick="agregarAlCatalogo()" style="background:var(--accent); border:none; padding:10px; border-radius:5px;">+</button>
+        </div>
+        <div id="lista-catalogo" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="seccion-config" class="container oculto">
+        <h3>Configuración</h3>
+        <div class="config-box">
+            <label>Imagen de Fondo (URL):</label>
+            <input type="text" id="bg-url-input" placeholder="Pega el link de la imagen aquí..." style="margin-top:8px;">
+            <button class="btn-blue" onclick="cambiarFondo()" style="background:var(--accent); color:black;">Aplicar Fondo</button>
+            <button class="delete" onclick="borrarFondo()" style="width:100%; margin-top:8px;">Quitar Fondo</button>
+        </div>
+        <div class="config-box">
+            <label>Copia de Seguridad:</label>
+            <button class="btn-blue" onclick="exportarDatos()">Descargar Respaldo (.json)</button>
+            <p style="font-size:12px; color:#aaa; margin-top:15px;">Para restaurar datos antiguos:</p>
+            <input type="file" id="import-file" accept=".json" onchange="importarDatos(event)">
+        </div>
     </div>
 </div>
 
 <datalist id="datalist-prods"></datalist>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('app_data')) || { catalogo: [], listas: [] };
+    let db = JSON.parse(localStorage.getItem('app_data')) || { catalogo: [], listas: [], bg: "" };
     let idActual = -1;
 
     function save() { localStorage.setItem('app_data', JSON.stringify(db)); actualizarDatalist(); }
 
+    function aplicarFondo() {
+        document.body.style.backgroundImage = db.bg ? `url('${db.bg}')` : "none";
+    }
+
     function showTab(tab) {
         document.getElementById('seccion-listas').classList.toggle('oculto', tab !== 'listas');
         document.getElementById('seccion-catalogo').classList.toggle('oculto', tab !== 'catalogo');
-        document.getElementById('btn-tab-listas').classList.toggle('active', tab === 'listas');
-        document.getElementById('btn-tab-catalogo').classList.toggle('active', tab === 'catalogo');
+        document.getElementById('seccion-config').classList.toggle('oculto', tab !== 'config');
+        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-tab-' + tab).classList.add('active');
         if(tab === 'catalogo') renderCatalogo();
         if(tab === 'listas') renderMenuListas();
+        if(tab === 'config') document.getElementById('bg-url-input').value = db.bg || "";
     }
 
+    function cambiarFondo() {
+        db.bg = document.getElementById('bg-url-input').value;
+        save(); aplicarFondo(); alert("Fondo guardado");
+    }
+
+    function borrarFondo() { db.bg = ""; save(); aplicarFondo(); document.getElementById('bg-url-input').value = ""; }
+
+    function exportarDatos() {
+        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = "respaldo_carrito.json";
+        a.click();
+    }
+
+    function importarDatos(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            db = JSON.parse(event.target.result);
+            save(); aplicarFondo(); renderMenuListas(); alert("Datos Restaurados");
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+
+    // Lógica de funcionamiento (Igual a la anterior pero optimizada)
     function agregarAlCatalogo() {
-        const input = document.getElementById('nuevo-prod-nombre');
-        if(input.value.trim()) {
-            db.catalogo.push(input.value.trim());
-            input.value = '';
-            save();
-            renderCatalogo();
-        }
+        const inp = document.getElementById('nuevo-prod-nombre');
+        if(inp.value.trim()) { db.catalogo.push(inp.value.trim()); inp.value=''; save(); renderCatalogo(); }
     }
 
     function renderCatalogo() {
         const cont = document.getElementById('lista-catalogo');
         cont.innerHTML = '';
         db.catalogo.sort().forEach((p, i) => {
-            cont.innerHTML += `<div class="cat-item"><span>${p}</span><button class="delete" onclick="borrarDelCat(${i})">Borrar</button></div>`;
+            cont.innerHTML += `<div class="cat-item"><span>${p}</span><button class="delete" onclick="db.catalogo.splice(${i},1); save(); renderCatalogo();">X</button></div>`;
         });
     }
 
-    function borrarDelCat(i) { if(confirm('¿Quitar del catálogo?')) { db.catalogo.splice(i, 1); save(); renderCatalogo(); } }
-
     function actualizarDatalist() {
-        const dl = document.getElementById('datalist-prods');
-        dl.innerHTML = db.catalogo.map(p => `<option value="${p}">`).join('');
+        document.getElementById('datalist-prods').innerHTML = db.catalogo.map(p => `<option value="${p}">`).join('');
     }
 
     function nuevaLista() {
-        const lista = { titulo: "Compra Nueva", fecha: new Date().toISOString().split('T')[0], tasa: 45, items: [] };
-        db.listas.push(lista);
-        idActual = db.listas.length - 1;
-        abrirLista(idActual);
+        db.listas.push({ titulo: "Compra Nueva", fecha: new Date().toISOString().split('T')[0], tasa: 45, items: [] });
+        abrirLista(db.listas.length - 1);
     }
 
     function renderMenuListas() {
         const cont = document.getElementById('contenedor-todas-listas');
         cont.innerHTML = '';
         db.listas.forEach((l, i) => {
-            cont.innerHTML += `
-                <div class="card" onclick="abrirLista(${i})">
-                    <strong>${l.titulo}</strong><br><small>${l.fecha}</small>
-                </div>`;
+            cont.innerHTML += `<div class="card" onclick="abrirLista(${i})"><strong>${l.titulo}</strong><br><small>${l.fecha}</small></div>`;
         });
     }
 
     function abrirLista(i) {
-        idActual = i;
-        const l = db.listas[i];
+        idActual = i; const l = db.listas[i];
         document.getElementById('edit-titulo').value = l.titulo;
         document.getElementById('edit-fecha').value = l.fecha;
         document.getElementById('edit-tasa').value = l.tasa;
@@ -139,10 +184,7 @@
         renderFilas();
     }
 
-    function agregarFilaVacia() { 
-        db.listas[idActual].items.push({n:'', p:0, c:1, tipo: 'und'}); 
-        renderFilas(); 
-    }
+    function agregarFilaVacia() { db.listas[idActual].items.push({n:'', p:0, c:1, tipo: 'und'}); renderFilas(); }
 
     function renderFilas() {
         const cont = document.getElementById('filas-articulos');
@@ -153,26 +195,23 @@
                     <div style="display:flex; gap:5px; margin-bottom:5px;">
                         <input type="text" value="${it.n}" list="datalist-prods" oninput="actualizarItem(${idx}, 'n', this.value)" placeholder="Producto" style="flex:2">
                         <select onchange="actualizarItem(${idx}, 'tipo', this.value)" style="flex:1">
-                            <option value="und" ${it.tipo === 'und' ? 'selected' : ''}>Unidad</option>
-                            <option value="kg" ${it.tipo === 'kg' ? 'selected' : ''}>Kilo</option>
+                            <option value="und" ${it.tipo === 'und' ? 'selected' : ''}>Und</option>
+                            <option value="kg" ${it.tipo === 'kg' ? 'selected' : ''}>Kg</option>
                         </select>
-                        <button class="delete" onclick="borrarFila(${idx})">×</button>
+                        <button class="delete" onclick="db.listas[idActual].items.splice(${idx},1); guardarActual(); renderFilas();">×</button>
                     </div>
                     <div class="grid">
-                        <input type="number" value="${it.p}" oninput="actualizarItem(${idx}, 'p', this.value)" placeholder="${it.tipo === 'und' ? 'Precio $' : 'Precio x Kg $'}">
-                        <input type="number" value="${it.c}" oninput="actualizarItem(${idx}, 'c', this.value)" placeholder="${it.tipo === 'und' ? 'Cant' : 'Peso (Kg)'}" step="0.001">
+                        <input type="number" value="${it.p}" oninput="actualizarItem(${idx}, 'p', this.value)" placeholder="Precio">
+                        <input type="number" value="${it.c}" oninput="actualizarItem(${idx}, 'c', this.value)" placeholder="Cant" step="0.001">
                     </div>
                 </div>`;
         });
         calcTotal();
     }
 
-    function borrarFila(idx) { db.listas[idActual].items.splice(idx, 1); guardarActual(); renderFilas(); }
-
     function actualizarItem(idx, campo, valor) {
         db.listas[idActual].items[idx][campo] = (campo === 'n' || campo === 'tipo') ? valor : parseFloat(valor);
-        guardarActual();
-        calcTotal();
+        guardarActual(); calcTotal();
     }
 
     function guardarActual() {
@@ -189,20 +228,17 @@
         document.getElementById('resBS').innerText = (tUSD * db.listas[idActual].tasa).toLocaleString('es-VE');
     }
 
-    function eliminarListaActual() {
-        if(confirm('¿Eliminar esta lista permanentemente?')) {
-            db.listas.splice(idActual, 1);
-            save();
-            irAMenuListas();
-        }
-    }
-
     function irAMenuListas() {
         document.getElementById('vista-menu-listas').classList.remove('oculto');
         document.getElementById('vista-detalle-lista').classList.add('oculto');
         renderMenuListas();
     }
 
+    function eliminarListaActual() {
+        if(confirm('¿Eliminar lista?')) { db.listas.splice(idActual, 1); save(); irAMenuListas(); }
+    }
+
+    aplicarFondo();
     actualizarDatalist();
     renderMenuListas();
 </script>
